@@ -47,6 +47,12 @@ DEFAULT_FEATURE_TRANSFORMATION_SERVER_PORT = 6569
 # Default registry server port
 DEFAULT_REGISTRY_SERVER_PORT = 6570
 
+# Environment variable for overwriting offline server port
+OFFLINE_SERVER_PORT_ENV_NAME: str = "OFFLINE_SERVER_PORT"
+
+# Environment variable for overwriting offline server host
+OFFLINE_SERVER_HOST_ENV_NAME: str = "OFFLINE_SERVER_HOST"
+
 # Default offline server port
 DEFAULT_OFFLINE_SERVER_PORT = 8815
 

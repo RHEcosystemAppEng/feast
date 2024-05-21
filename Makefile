@@ -419,6 +419,14 @@ build-feature-server-java-docker:
 		-t $(REGISTRY)/feature-server-java:$(VERSION) \
 		-f java/infra/docker/feature-server/Dockerfile --load .
 
+build-offline-server-docker:
+	docker buildx build --build-arg VERSION=$(VERSION) \
+		-t $(REGISTRY)/offline-server:$(VERSION) \
+		-f sdk/python/feast/infra/offline_servers/Dockerfile --load .
+
+push-offline-server-docker:
+	docker push $(REGISTRY)/offline-server:$(VERSION)
+
 push-feast-operator-docker:
 	cd infra/feast-operator && \
 	IMAGE_TAG_BASE=$(REGISTRY)/feast-operator \
