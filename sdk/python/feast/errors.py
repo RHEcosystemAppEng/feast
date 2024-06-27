@@ -401,3 +401,8 @@ class DataFrameSerializationError(Exception):
         super().__init__(
             f"Failed to serialize the provided dictionary into a pandas DataFrame: {input_dict.keys()}"
         )
+
+
+class PermissionNotFoundException(Exception):
+    def __init__(self, name, project):
+        super().__init__(f"Permission {name} does not exist in project {project}")
