@@ -17,3 +17,12 @@ class AuthzedAction(enum.Enum):
     WRITE = "write"  # Query on any store
     WRITE_ONLINE = "write_online"  # Write to the online store only
     WRITE_OFFLINE = "write_offline"  # Write to the offline store only
+
+
+#  Alias for CRUD actions
+CRUD = [
+    AuthzedAction.CREATE,
+    AuthzedAction.READ,
+    AuthzedAction.UPDATE,
+    AuthzedAction.DELETE,
+]

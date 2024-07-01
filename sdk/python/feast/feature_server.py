@@ -18,6 +18,8 @@ from feast import proto_json, utils
 from feast.constants import DEFAULT_FEATURE_SERVER_REGISTRY_TTL
 from feast.data_source import PushMode
 from feast.errors import PushSourceNotFoundException
+from feast.permissions.action import AuthzedAction
+from feast.permissions.security_manager import assert_permissions
 
 
 # TODO: deprecate this in favor of push features
@@ -88,10 +90,15 @@ def get_app(
             body = json.loads(body)
             # Initialize parameters for FeatureStore.get_online_features(...) call
             if "feature_service" in body:
-                features = store.get_feature_service(
+                feature_service = store.get_feature_service(
                     body["feature_service"], allow_cache=True
                 )
+                assert_permissions(
+                    resource=feature_service, actions=[AuthzedAction.QUERY_ONLINE]
+                )
+                features = feature_service
             else:
+                # TODO: How add the permissions if it has feature list ??
                 features = body["features"]
 
             full_feature_names = body.get("full_feature_names", False)

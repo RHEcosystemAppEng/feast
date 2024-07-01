@@ -76,7 +76,9 @@ from feast.infra.registry.registry import Registry
 from feast.infra.registry.sql import SqlRegistry
 from feast.on_demand_feature_view import OnDemandFeatureView
 from feast.online_response import OnlineResponse
+from feast.permissions.action import AuthzedAction
 from feast.permissions.permission import Permission
+from feast.permissions.security_manager import assert_permissions
 from feast.protos.feast.core.InfraObject_pb2 import Infra as InfraProto
 from feast.protos.feast.serving.ServingService_pb2 import (
     FieldStatus,
@@ -1480,6 +1482,7 @@ class FeatureStore:
                 pass
             else:
                 raise ValueError("inputs must be a dictionary or a pandas DataFrame.")
+        assert_permissions(resource=feature_view, actions=[AuthzedAction.WRITE_ONLINE])
         provider = self._get_provider()
         provider.ingest_df(feature_view, df)
 
@@ -1522,6 +1525,7 @@ class FeatureStore:
             df = df.reindex(columns=source_columns)
 
         table = pa.Table.from_pandas(df)
+        assert_permissions(resource=feature_view, actions=[AuthzedAction.WRITE_OFFLINE])
         provider = self._get_provider()
         provider.ingest_df_to_offline_store(feature_view, table)
 

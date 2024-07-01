@@ -3,15 +3,18 @@ import json
 import logging
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 import pyarrow as pa
 import pyarrow.flight as fl
 
 from feast import FeatureStore, FeatureView, utils
+from feast.feast_object import FeastObject
 from feast.feature_logging import FeatureServiceLoggingSource
 from feast.feature_view import DUMMY_ENTITY_NAME
 from feast.infra.offline_stores.offline_utils import get_offline_store_from_config
+from feast.permissions.action import AuthzedAction
+from feast.permissions.security_manager import assert_permissions, permitted_resources
 from feast.saved_dataset import SavedDatasetStorage
 
 logger = logging.getLogger(__name__)
@@ -215,9 +218,15 @@ class OfflineServer(fl.FlightServerBase):
         )
 
         assert len(feature_views) == 1, "incorrect feature view"
+        feature_view = feature_views[0]
+        assert_permissions(
+            resource=feature_view,
+            actions=[AuthzedAction.WRITE, AuthzedAction.WRITE_OFFLINE],
+        )
+
         table = self.flights[key]
         self.offline_store.offline_write_batch(
-            self.store.config, feature_views[0], table, command["progress"]
+            self.store.config, feature_view, table, command["progress"]
         )
 
     def _validate_write_logged_features_parameters(self, command: dict):
@@ -234,6 +243,11 @@ class OfflineServer(fl.FlightServerBase):
             feature_service.logging_config is not None
         ), "feature service must have logging_config set"
 
+        assert_permissions(
+            resource=feature_service,
+            actions=[AuthzedAction.WRITE, AuthzedAction.WRITE_OFFLINE],
+        )
+        # TODO: any other resource to set for permission ??
         self.offline_store.write_logged_features(
             config=self.store.config,
             data=table,
@@ -260,10 +274,14 @@ class OfflineServer(fl.FlightServerBase):
 
     def pull_all_from_table_or_query(self, command: dict):
         self._validate_pull_all_from_table_or_query_parameters(command)
+        data_source = self.store.get_data_source(command["data_source_name"])
+        assert_permissions(
+            data_source, actions=[AuthzedAction.QUERY, AuthzedAction.QUERY_OFFLINE]
+        )
 
         return self.offline_store.pull_all_from_table_or_query(
             self.store.config,
-            self.store.get_data_source(command["data_source_name"]),
+            data_source,
             command["join_key_columns"],
             command["feature_name_columns"],
             command["timestamp_field"],
@@ -287,10 +305,11 @@ class OfflineServer(fl.FlightServerBase):
 
     def pull_latest_from_table_or_query(self, command: dict):
         self._validate_pull_latest_from_table_or_query_parameters(command)
-
+        data_source = self.store.get_data_source(command["data_source_name"])
+        assert_permissions(resource=data_source, actions=[AuthzedAction.QUERY_OFFLINE])
         return self.offline_store.pull_latest_from_table_or_query(
             self.store.config,
-            self.store.get_data_source(command["data_source_name"]),
+            data_source,
             command["join_key_columns"],
             command["feature_name_columns"],
             command["timestamp_field"],
@@ -343,9 +362,17 @@ class OfflineServer(fl.FlightServerBase):
             project=project,
         )
 
+        permitted_feature_views = cast(
+            list[FeatureView],
+            permitted_resources(
+                resources=cast(list[FeastObject], feature_views),
+                actions=[AuthzedAction.READ],
+            ),
+        )
+
         retJob = self.offline_store.get_historical_features(
             config=self.store.config,
-            feature_views=feature_views,
+            feature_views=permitted_feature_views,
             feature_refs=feature_refs,
             entity_df=entity_df,
             registry=self.store.registry,
@@ -377,6 +404,10 @@ class OfflineServer(fl.FlightServerBase):
                 raise NotImplementedError
 
             data_source = self.store.get_data_source(command["data_source_name"])
+            assert_permissions(
+                resource=data_source,
+                actions=[AuthzedAction.WRITE, AuthzedAction.WRITE_OFFLINE],
+            )
             storage = SavedDatasetStorage.from_data_source(data_source)
             ret_job.persist(storage, command["allow_overwrite"], command["timeout"])
         except Exception as e:
