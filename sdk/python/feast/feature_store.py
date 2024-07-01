@@ -76,6 +76,7 @@ from feast.infra.registry.registry import Registry
 from feast.infra.registry.sql import SqlRegistry
 from feast.on_demand_feature_view import OnDemandFeatureView
 from feast.online_response import OnlineResponse
+from feast.permissions.permission import Permission
 from feast.protos.feast.core.InfraObject_pb2 import Infra as InfraProto
 from feast.protos.feast.serving.ServingService_pb2 import (
     FieldStatus,
@@ -733,7 +734,8 @@ class FeatureStore:
             ...     on_demand_feature_views=list(),
             ...     stream_feature_views=list(),
             ...     entities=[driver],
-            ...     feature_services=list())) # register entity and feature view
+            ...     feature_services=list(),
+            ...     permissions=list())) # register entity and feature view
         """
         # Validate and run inference on all the objects to be registered.
         self._validate_all_feature_views(
@@ -797,6 +799,7 @@ class FeatureStore:
             StreamFeatureView,
             FeatureService,
             ValidationReference,
+            Permission,
             List[FeastObject],
         ],
         objects_to_delete: Optional[List[FeastObject]] = None,
@@ -868,6 +871,7 @@ class FeatureStore:
         validation_references_to_update = [
             ob for ob in objects if isinstance(ob, ValidationReference)
         ]
+        permissions_to_update = [ob for ob in objects if isinstance(ob, Permission)]
 
         batch_sources_to_add: List[DataSource] = []
         for data_source in data_sources_set_to_update:
@@ -923,10 +927,15 @@ class FeatureStore:
             self._registry.apply_validation_reference(
                 validation_references, project=self.project, commit=False
             )
+        for permission in permissions_to_update:
+            self._registry.apply_permission(
+                permission, project=self.project, commit=False
+            )
 
         entities_to_delete = []
         views_to_delete = []
         sfvs_to_delete = []
+        permissions_to_delete = []
         if not partial:
             # Delete all registry objects that should not exist.
             entities_to_delete = [
@@ -954,6 +963,9 @@ class FeatureStore:
             ]
             validation_references_to_delete = [
                 ob for ob in objects_to_delete if isinstance(ob, ValidationReference)
+            ]
+            permissions_to_delete = [
+                ob for ob in objects_to_delete if isinstance(ob, Permission)
             ]
 
             for data_source in data_sources_to_delete:
@@ -983,6 +995,10 @@ class FeatureStore:
             for validation_references in validation_references_to_delete:
                 self._registry.delete_validation_reference(
                     validation_references.name, project=self.project, commit=False
+                )
+            for permission in permissions_to_delete:
+                self._registry.delete_permission(
+                    permission.name, project=self.project, commit=False
                 )
 
         tables_to_delete: List[FeatureView] = (
@@ -2076,6 +2092,18 @@ class FeatureStore:
         )
         ref._dataset = self.get_saved_dataset(ref.dataset_name)
         return ref
+
+    def list_permissions(self, allow_cache: bool = False) -> List[Permission]:
+        """
+        Retrieves the list of permissions from the registry.
+
+        Args:
+            allow_cache: Whether to allow returning permissions from a cached registry.
+
+        Returns:
+            A list of data sources.
+        """
+        return self._registry.list_permissions(self.project, allow_cache=allow_cache)
 
 
 def _print_materialization_log(
