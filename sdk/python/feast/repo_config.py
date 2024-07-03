@@ -323,7 +323,7 @@ class RepoConfig(FeastBaseModel):
             allowed_auth_types = [authType.value for authType in AuthType]
             if values["auth"].get("type") is None:
                 raise ValueError(
-                    "auth configuration is not having authentication type. Possible values=[oidc,k8]"
+                    f"auth configuration is not having authentication type. Possible values={allowed_auth_types}"
                 )
             elif values["auth"]["type"].lower() not in allowed_auth_types:
                 raise ValueError(
