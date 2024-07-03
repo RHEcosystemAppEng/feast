@@ -25,6 +25,7 @@ from feast.errors import (
     FeastRegistryTypeInvalidError,
 )
 from feast.importer import import_class
+from feast.permissions.auth_model import AuthType
 
 warnings.simplefilter("once", RuntimeWarning)
 
@@ -319,14 +320,14 @@ class RepoConfig(FeastBaseModel):
     @model_validator(mode="before")
     def _validate_auth_config(cls, values: Any) -> Any:
         if "auth" in values:
+            allowed_auth_types = [authType.value for authType in AuthType]
             if values["auth"].get("type") is None:
                 raise ValueError("auth configuration is not having authentication type. Possible values=[oidc,k8]")
-            elif values["auth"]["type"].lower() not in ["oidc", "k8"]:
+            elif values["auth"]["type"].lower() not in allowed_auth_types:
                 raise ValueError(
                     f'auth configuration is having invalid authentication type={values["auth"]["type"]}. Possible '
-                    f'values=[oidc,k8]'
+                    f'values={allowed_auth_types}'
                 )
-        # Validate the dict to ensure one of the union types match
         return values
 
 

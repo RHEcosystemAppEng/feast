@@ -4,6 +4,7 @@ from textwrap import dedent
 from typing import Optional
 
 from feast.infra.online_stores.sqlite import SqliteOnlineStoreConfig
+from feast.permissions.auth_model import AuthType
 from feast.repo_config import FeastConfigError, load_repo_config
 
 
@@ -335,7 +336,7 @@ def test_auth_config():
         entity_key_serialization_version: 2
         """
         ),
-        expect_error="auth configuration is having invalid authentication type=not_valid_auth_type. Possible values=[oidc,k8]",
+        expect_error=f"auth configuration is having invalid authentication type=not_valid_auth_type. Possible values={[authType.value for authType in AuthType]}",
     )
 
     _test_config(
