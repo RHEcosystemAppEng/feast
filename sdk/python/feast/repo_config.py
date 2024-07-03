@@ -223,6 +223,10 @@ class RepoConfig(FeastBaseModel):
         if "auth" in data:
             self._auth = data["auth"]
 
+        self._auth = None
+        if "auth" in data:
+            self._auth = data["auth"]
+
         self._batch_engine = None
         if "batch_engine" in data:
             self.batch_engine_config = data["batch_engine"]
