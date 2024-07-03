@@ -292,4 +292,3 @@ def test_auth_config():
         ),
         expect_error=None,
     )
-
