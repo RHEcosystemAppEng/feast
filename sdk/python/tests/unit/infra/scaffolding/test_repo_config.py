@@ -344,7 +344,7 @@ def test_auth_config():
             """
         project: foo
         auth:
-            type: oidc
+            type: OIDC
             client_id: test_client_id
             client_secret: test_client_secret
             username: test_user_name
@@ -360,3 +360,4 @@ def test_auth_config():
         ),
         expect_error=None,
     )
+
