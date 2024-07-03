@@ -322,14 +322,15 @@ class RepoConfig(FeastBaseModel):
         if "auth" in values:
             allowed_auth_types = [authType.value for authType in AuthType]
             if values["auth"].get("type") is None:
-                raise ValueError("auth configuration is not having authentication type. Possible values=[oidc,k8]")
+                raise ValueError(
+                    "auth configuration is not having authentication type. Possible values=[oidc,k8]"
+                )
             elif values["auth"]["type"].lower() not in allowed_auth_types:
                 raise ValueError(
                     f'auth configuration is having invalid authentication type={values["auth"]["type"]}. Possible '
                     f'values={allowed_auth_types}'
                 )
         return values
-
 
     @model_validator(mode="before")
     def _validate_online_store_config(cls, values: Any) -> Any:
