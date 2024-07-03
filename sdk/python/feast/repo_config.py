@@ -102,6 +102,15 @@ class FeastConfigBaseModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
 
+class OidcConfigModel(BaseModel):
+    client_id: StrictStr
+    client_secret: StrictStr
+    username: str
+    password: str
+    realm: StrictStr = "master"
+    auth_server_url: StrictStr
+
+
 class RegistryConfig(FeastBaseModel):
     """Metadata Store Configuration. Configuration that relates to reading from and writing to the Feast registry."""
 
@@ -151,6 +160,9 @@ class RepoConfig(FeastBaseModel):
 
     online_config: Any = Field(None, alias="online_store")
     """ OnlineStoreConfig: Online store configuration (optional depending on provider) """
+
+    auth: Any = Field(None, alias="auth")
+    """ auth: Optional if the services needs the authentication against IDPs (optional depending on provider) """
 
     offline_config: Any = Field(None, alias="offline_store")
     """ OfflineStoreConfig: Offline store configuration (optional depending on provider) """
@@ -215,6 +227,10 @@ class RepoConfig(FeastBaseModel):
                 self.online_config = "dynamodb"
             elif data["provider"] == "rockset":
                 self.online_config = "rockset"
+
+        self._auth = None
+        if "auth" in data:
+            self._auth = data["auth"]
 
         self._batch_engine = None
         if "batch_engine" in data:
@@ -304,6 +320,20 @@ class RepoConfig(FeastBaseModel):
                 self._batch_engine = self._batch_engine
 
         return self._batch_engine
+
+    @model_validator(mode="before")
+    def _validate_auth_config(cls, values: Any) -> Any:
+        if "auth" in values:
+            if values["auth"].get("type") is None:
+                raise ValueError("auth configuration is not having authentication type. Possible values=[oidc,k8]")
+            elif values["auth"]["type"].lower() not in ["oidc", "k8"]:
+                raise ValueError(
+                    f'auth configuration is having invalid authentication type={values["auth"]["type"]}. Possible '
+                    f'values=[oidc,k8]'
+                )
+        # Validate the dict to ensure one of the union types match
+        return values
+
 
     @model_validator(mode="before")
     def _validate_online_store_config(cls, values: Any) -> Any:
