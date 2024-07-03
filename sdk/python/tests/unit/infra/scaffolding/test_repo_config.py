@@ -228,6 +228,7 @@ def test_invalid_project_name():
 
 
 def test_auth_config():
+    allowed_auth_types = [authType.value for authType in AuthType]
     _test_config(
         dedent(
             """
@@ -246,7 +247,7 @@ def test_auth_config():
         entity_key_serialization_version: 2
         """
         ),
-        expect_error="auth configuration is not having authentication type. Possible values=[oidc,k8]",
+        expect_error=f"auth configuration is not having authentication type. Possible values={allowed_auth_types}",
     )
 
     _test_config(
@@ -268,7 +269,7 @@ def test_auth_config():
         entity_key_serialization_version: 2
         """
         ),
-        expect_error=f"auth configuration is having invalid authentication type=not_valid_auth_type. Possible values={[authType.value for authType in AuthType]}",
+        expect_error=f"auth configuration is having invalid authentication type=not_valid_auth_type. Possible values={allowed_auth_types}",
     )
 
     _test_config(
