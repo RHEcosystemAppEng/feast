@@ -33,6 +33,36 @@ def _test_config(config_text, expect_error: Optional[str]):
         return rc
 
 
+def test_nullable_online_store_aws():
+    _test_config(
+        dedent(
+            """
+        project: foo
+        registry: "registry.db"
+        provider: aws
+        online_store: null
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error="4 validation errors for RepoConfig\nregion\n  Field required",
+    )
+
+
+def test_nullable_online_store_gcp():
+    _test_config(
+        dedent(
+            """
+        project: foo
+        registry: "registry.db"
+        provider: gcp
+        online_store: null
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error=None,
+    )
+
+
 def test_nullable_online_store_local():
     _test_config(
         dedent(
@@ -190,6 +220,73 @@ def test_no_provider():
         registry: "registry.db"
         online_store:
             path: "blah"
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error=None,
+    )
+
+
+def test_auth_config():
+    _test_config(
+        dedent(
+            """
+        project: foo
+        auth:
+            client_id: test_client_id
+            client_secret: test_client_secret
+            username: test_user_name
+            password: test_password
+            realm: master
+            auth_server_url: http://localhost:8712
+        registry: "registry.db"
+        provider: local
+        online_store:
+            path: foo
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error="auth configuration is not having authentication type. Possible values=[oidc,k8]",
+    )
+
+    _test_config(
+        dedent(
+            """
+        project: foo
+        auth:
+            type: not_valid_auth_type
+            client_id: test_client_id
+            client_secret: test_client_secret
+            username: test_user_name
+            password: test_password
+            realm: master
+            auth_server_url: http://localhost:8712
+        registry: "registry.db"
+        provider: local
+        online_store:
+            path: foo
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error="auth configuration is having invalid authentication type=not_valid_auth_type. Possible values=[oidc,k8]",
+    )
+
+    _test_config(
+        dedent(
+            """
+        project: foo
+        auth:
+            type: oidc
+            client_id: test_client_id
+            client_secret: test_client_secret
+            username: test_user_name
+            password: test_password
+            realm: master
+            auth_server_url: http://localhost:8712
+        registry: "registry.db"
+        provider: local
+        online_store:
+            path: foo
         entity_key_serialization_version: 2
         """
         ),
