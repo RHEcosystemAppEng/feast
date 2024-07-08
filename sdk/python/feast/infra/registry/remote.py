@@ -472,10 +472,9 @@ class RemoteRegistry(BaseRegistry):
         self,
         project: str,
         allow_cache: bool = False,
-        tags: Optional[dict[str, str]] = None,
     ) -> List[Permission]:
         request = RegistryServer_pb2.ListPermissionsRequest(
-            project=project, allow_cache=allow_cache, tags=tags
+            project=project, allow_cache=allow_cache
         )
 
         response = self.stub.ListPermissions(request)

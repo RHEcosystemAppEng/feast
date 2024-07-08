@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from datetime import timedelta
+from datetime import datetime, timedelta
 from threading import Lock
 from typing import List, Optional
 
@@ -16,7 +16,6 @@ from feast.permissions.permission import Permission
 from feast.project_metadata import ProjectMetadata
 from feast.saved_dataset import SavedDataset, ValidationReference
 from feast.stream_feature_view import StreamFeatureView
-from feast.utils import _utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ class CachingRegistry(BaseRegistry):
     ):
         self.cached_registry_proto = self.proto()
         proto_registry_utils.init_project_metadata(self.cached_registry_proto, project)
-        self.cached_registry_proto_created = _utc_now()
+        self.cached_registry_proto_created = datetime.utcnow()
         self._refresh_lock = Lock()
         self.cached_registry_proto_ttl = timedelta(
             seconds=cache_ttl_seconds if cache_ttl_seconds is not None else 0
@@ -325,23 +324,20 @@ class CachingRegistry(BaseRegistry):
         return self._get_permission(name, project)
 
     @abstractmethod
-    def _list_permissions(
-        self, project: str, tags: Optional[dict[str, str]]
-    ) -> List[Permission]:
+    def _list_permissions(self, project: str) -> List[Permission]:
         pass
 
     def list_permissions(
         self,
         project: str,
         allow_cache: bool = False,
-        tags: Optional[dict[str, str]] = None,
     ) -> List[Permission]:
         if allow_cache:
             self._refresh_cached_registry_if_necessary()
             return proto_registry_utils.list_permissions(
-                self.cached_registry_proto, project, tags
+                self.cached_registry_proto, project
             )
-        return self._list_permissions(project, tags)
+        return self._list_permissions(project)
 
     def refresh(self, project: Optional[str] = None):
         if project:
@@ -353,7 +349,7 @@ class CachingRegistry(BaseRegistry):
                     self.cached_registry_proto, project
                 )
         self.cached_registry_proto = self.proto()
-        self.cached_registry_proto_created = _utc_now()
+        self.cached_registry_proto_created = datetime.utcnow()
 
     def _refresh_cached_registry_if_necessary(self):
         with self._refresh_lock:
@@ -364,7 +360,7 @@ class CachingRegistry(BaseRegistry):
                 self.cached_registry_proto_ttl.total_seconds()
                 > 0  # 0 ttl means infinity
                 and (
-                    _utc_now()
+                    datetime.utcnow()
                     > (
                         self.cached_registry_proto_created
                         + self.cached_registry_proto_ttl

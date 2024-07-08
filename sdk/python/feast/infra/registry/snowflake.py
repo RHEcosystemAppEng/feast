@@ -10,6 +10,7 @@ from typing import Any, Callable, List, Literal, Optional, Set, Union
 from pydantic import ConfigDict, Field, StrictStr
 
 import feast
+from feast import utils
 from feast.base_feature_view import BaseFeatureView
 from feast.data_source import DataSource
 from feast.entity import Entity
@@ -56,7 +57,6 @@ from feast.protos.feast.core.ValidationProfile_pb2 import (
 from feast.repo_config import RegistryConfig
 from feast.saved_dataset import SavedDataset, ValidationReference
 from feast.stream_feature_view import StreamFeatureView
-from feast.utils import _utc_now, has_all_tags
 
 logger = logging.getLogger(__name__)
 
@@ -129,15 +129,16 @@ class SnowflakeRegistry(BaseRegistry):
         with GetSnowflakeConnection(self.registry_config) as conn:
             sql_function_file = f"{os.path.dirname(feast.__file__)}/infra/utils/snowflake/registry/snowflake_table_creation.sql"
             with open(sql_function_file, "r") as file:
-                sql_file = file.read()
-                sql_cmds = sql_file.split(";")
-                for command in sql_cmds:
+                sqlFile = file.read()
+
+                sqlCommands = sqlFile.split(";")
+                for command in sqlCommands:
                     query = command.replace("REGISTRY_PATH", f"{self.registry_path}")
                     execute_snowflake_statement(conn, query)
 
         self.cached_registry_proto = self.proto()
         proto_registry_utils.init_project_metadata(self.cached_registry_proto, project)
-        self.cached_registry_proto_created = _utc_now()
+        self.cached_registry_proto_created = datetime.utcnow()
         self._refresh_lock = Lock()
         self.cached_registry_proto_ttl = timedelta(
             seconds=registry_config.cache_ttl_seconds
@@ -156,7 +157,7 @@ class SnowflakeRegistry(BaseRegistry):
                     self.cached_registry_proto, project
                 )
         self.cached_registry_proto = self.proto()
-        self.cached_registry_proto_created = _utc_now()
+        self.cached_registry_proto_created = datetime.utcnow()
 
     def _refresh_cached_registry_if_necessary(self):
         with self._refresh_lock:
@@ -167,7 +168,7 @@ class SnowflakeRegistry(BaseRegistry):
                 self.cached_registry_proto_ttl.total_seconds()
                 > 0  # 0 ttl means infinity
                 and (
-                    _utc_now()
+                    datetime.utcnow()
                     > (
                         self.cached_registry_proto_created
                         + self.cached_registry_proto_ttl
@@ -184,6 +185,7 @@ class SnowflakeRegistry(BaseRegistry):
             sql_function_file = f"{os.path.dirname(feast.__file__)}/infra/utils/snowflake/registry/snowflake_table_deletion.sql"
             with open(sql_function_file, "r") as file:
                 sqlFile = file.read()
+
                 sqlCommands = sqlFile.split(";")
                 for command in sqlCommands:
                     query = command.replace("REGISTRY_PATH", f"{self.registry_path}")
@@ -282,7 +284,7 @@ class SnowflakeRegistry(BaseRegistry):
         name = name or (obj.name if hasattr(obj, "name") else None)
         assert name, f"name needs to be provided for {obj}"
 
-        update_datetime = _utc_now()
+        update_datetime = datetime.utcnow()
         if hasattr(obj, "last_updated_timestamp"):
             obj.last_updated_timestamp = update_datetime
 
@@ -428,7 +430,7 @@ class SnowflakeRegistry(BaseRegistry):
 
             if cursor.rowcount < 1 and not_found_exception:  # type: ignore
                 raise not_found_exception(name, project)
-            self._set_last_updated_metadata(_utc_now(), project)
+            self._set_last_updated_metadata(datetime.utcnow(), project)
 
             return cursor.rowcount
 
@@ -827,7 +829,7 @@ class SnowflakeRegistry(BaseRegistry):
                     obj = python_class.from_proto(
                         proto_class.FromString(row[1][proto_field_name])
                     )
-                    if has_all_tags(obj.tags, tags):
+                    if utils.has_all_tags(obj.tags, tags):
                         objects.append(obj)
                 return objects
         return []
@@ -836,7 +838,6 @@ class SnowflakeRegistry(BaseRegistry):
         self,
         project: str,
         allow_cache: bool = False,
-        tags: Optional[dict[str, str]] = None,
     ) -> List[Permission]:
         if allow_cache:
             self._refresh_cached_registry_if_necessary()
@@ -849,7 +850,6 @@ class SnowflakeRegistry(BaseRegistry):
             PermissionProto,
             Permission,
             "PERMISSION_PROTO",
-            tags,
         )
 
     def apply_materialization(

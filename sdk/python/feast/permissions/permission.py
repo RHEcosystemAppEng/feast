@@ -32,16 +32,17 @@ class Permission(ABC):
         with_subclasses: If `True`, it includes sub-classes of the given types in the match, otherwise only exact type match is applied.
         Defaults to `True`.
         name_pattern: A regex to match the resource name. Defaults to None, meaning that no name filtering is applied
+        required_tags: Dictionary of key-value pairs that must match the resource tags. All these required_tags must
         be present in a resource tags with the given value. Defaults to None, meaning that no tags filtering is applied.
         actions: The actions authorized by this permission. Defaults to `ALL_ACTIONS`.
         policy: The policy to be applied to validate a client request.
-        tags: Dictionary of key-value pairs that must match the resource tags. All these tags must
     """
 
     _name: str
     _types: list["FeastObject"]
     _with_subclasses: bool
     _name_pattern: Optional[str]
+    _required_tags: Optional[dict[str, str]]
     _actions: list[AuthzedAction]
     _policy: Policy
     _tags: Dict[str, str]
@@ -52,9 +53,10 @@ class Permission(ABC):
         types: Optional[Union[list["FeastObject"], "FeastObject"]] = None,
         with_subclasses: bool = True,
         name_pattern: Optional[str] = None,
+        required_tags: Optional[dict[str, str]] = None,
         actions: Union[list[AuthzedAction], AuthzedAction] = ALL_ACTIONS,
         policy: Policy = AllowAll,
-        tags: Optional[dict[str, str]] = None,
+        tags: Optional[Dict[str, str]] = None,
     ):
         from feast.feast_object import ALL_RESOURCE_TYPES
 
@@ -71,9 +73,10 @@ class Permission(ABC):
         self._types = types if isinstance(types, list) else [types]
         self._with_subclasses = with_subclasses
         self._name_pattern = _normalize_name_pattern(name_pattern)
+        self._required_tags = _normalize_required_tags(required_tags)
         self._actions = actions if isinstance(actions, list) else [actions]
         self._policy = policy
-        self._tags = _normalize_tags(tags)
+        self._tags = tags or {}
 
     def __eq__(self, other):
         if not isinstance(other, Permission):
@@ -83,7 +86,7 @@ class Permission(ABC):
             self.name != other.name
             or self.with_subclasses != other.with_subclasses
             or self.name_pattern != other.name_pattern
-            or self.tags != other.tags
+            or self.required_tags != other.required_tags
             or self.policy != other.policy
             or self.actions != other.actions
         ):
@@ -127,6 +130,10 @@ class Permission(ABC):
         return self._name_pattern
 
     @property
+    def required_tags(self) -> Optional[dict[str, str]]:
+        return self._required_tags
+
+    @property
     def actions(self) -> list[AuthzedAction]:
         return self._actions
 
@@ -148,7 +155,7 @@ class Permission(ABC):
             expected_types=self.types,
             with_subclasses=self.with_subclasses,
             name_pattern=self.name_pattern,
-            required_tags=self.tags,
+            required_tags=self.required_tags,
         )
 
     def match_actions(self, requested_actions: list[AuthzedAction]) -> bool:
@@ -189,6 +196,7 @@ class Permission(ABC):
             types,
             permission_proto.with_subclasses,
             permission_proto.name_pattern or None,
+            dict(permission_proto.required_tags),
             actions,
             Policy.from_proto(permission_proto.policy),
             dict(permission_proto.tags) or None,
@@ -216,6 +224,7 @@ class Permission(ABC):
             types=types,
             with_subclasses=self.with_subclasses,
             name_pattern=self.name_pattern if self.name_pattern is not None else None,
+            required_tags=self.required_tags,
             actions=actions,
             policy=self.policy.to_proto(),
             tags=self._tags if self._tags is not None else None,
@@ -230,10 +239,11 @@ def _normalize_name_pattern(name_pattern: Optional[str]):
     return None
 
 
-def _normalize_tags(tags: Optional[dict[str, str]]):
-    if tags:
+def _normalize_required_tags(required_tags: Optional[dict[str, str]]):
+    if required_tags:
         return {
-            k.strip(): v.strip() if isinstance(v, str) else v for k, v in tags.items()
+            k.strip(): v.strip() if isinstance(v, str) else v
+            for k, v in required_tags.items()
         }
     return None
 
