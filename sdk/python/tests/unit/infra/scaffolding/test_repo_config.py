@@ -125,6 +125,7 @@ def test_local_config_with_full_online_class_directly():
     )
     assert isinstance(c.online_store, SqliteOnlineStoreConfig)
 
+
 def test_gcp_config():
     _test_config(
         dedent(
@@ -137,6 +138,7 @@ def test_gcp_config():
         ),
         expect_error=None,
     )
+
 
 def test_extra_field():
     _test_config(
