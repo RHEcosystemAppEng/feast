@@ -88,7 +88,7 @@ FEATURE_SERVER_CONFIG_CLASS_FOR_TYPE = {
 
 AUTH_CONFIGS_CLASS_FOR_TYPE = {
     "no_auth": "feast.permissions.auth_model.NoAuthConfig",
-    "k8": "feast.permissions.auth_model.K8AuthConfig",
+    "kubernetes": "feast.permissions.auth_model.K8AuthConfig",
     "oidc": "feast.permissions.auth_model.OidcAuthConfig",
 }
 
@@ -330,7 +330,7 @@ class RepoConfig(FeastBaseModel):
     @model_validator(mode="before")
     def _validate_auth_config(cls, values: Any) -> Any:
         if "auth" in values:
-            allowed_auth_types = ["oidc", "k8", "no_auth"]
+            allowed_auth_types = AUTH_CONFIGS_CLASS_FOR_TYPE.keys()
             if values["auth"].get("type") is None:
                 raise ValueError(
                     f"auth configuration is not having authentication type. Possible values={allowed_auth_types}"

@@ -4,7 +4,7 @@ from textwrap import dedent
 from typing import Optional
 
 from feast.infra.online_stores.sqlite import SqliteOnlineStoreConfig
-from feast.permissions.auth_model import NoAuthConfig, OidcAuthConfig
+from feast.permissions.auth_model import K8AuthConfig, NoAuthConfig, OidcAuthConfig
 from feast.repo_config import FeastConfigError, load_repo_config
 
 
@@ -272,7 +272,7 @@ def test_auth_config():
     assert oidc_repo_config.auth_config.realm == "master"
     assert oidc_repo_config.auth_config.auth_server_url == "http://localhost:8712"
 
-    repo_config = _test_config(
+    no_auth_repo_config = _test_config(
         dedent(
             """
         project: foo
@@ -285,5 +285,23 @@ def test_auth_config():
         ),
         expect_error=None,
     )
-    assert repo_config.auth.get("type") == "no_auth"
-    assert isinstance(repo_config.auth_config, NoAuthConfig)
+    assert no_auth_repo_config.auth.get("type") == "no_auth"
+    assert isinstance(no_auth_repo_config.auth_config, NoAuthConfig)
+
+    k8_repo_config = _test_config(
+        dedent(
+            """
+        auth:
+            type: kubernetes
+        project: foo
+        registry: "registry.db"
+        provider: local
+        online_store:
+            path: foo
+        entity_key_serialization_version: 2
+        """
+        ),
+        expect_error=None,
+    )
+    assert k8_repo_config.auth.get("type") == "kubernetes"
+    assert isinstance(k8_repo_config.auth_config, K8AuthConfig)
