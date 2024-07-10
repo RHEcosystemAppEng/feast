@@ -26,19 +26,17 @@ class OidcAuthClientManager(AuthenticationClientManager):
         # Fetch the token endpoint from the discovery URL
         token_endpoint = self._get_token_endpoint()
 
-        token_data = {
+        token_request_body = {
             "grant_type": "password",
             "client_id": "admin-cli",
             "username": self.auth_config.username,
             "password": self.auth_config.password,
         }
 
-        token_response = requests.post(token_endpoint, data=token_data)
+        token_response = requests.post(token_endpoint, data=token_request_body)
         if token_response.status_code == 200:
-            global access_token
-            access_token = token_response.json()["access_token"]
-            return access_token
+            return token_response.json()["access_token"]
         else:
-            raise Exception(
+            raise RuntimeError(
                 "Failed to obtain access token: {token_response.status_code} - {token_response.text}"
             )
