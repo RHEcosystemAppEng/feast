@@ -17,6 +17,7 @@ from feast.on_demand_feature_view import OnDemandFeatureView
 from feast.permissions.action import CRUD, AuthzedAction
 from feast.permissions.permission import Permission
 from feast.permissions.security_manager import assert_permissions, permitted_resources
+from feast.permissions.server.arrow import inject_user_details_decorator
 from feast.permissions.server.grpc import grpc_interceptors
 from feast.permissions.server.utils import (
     ServerType,
@@ -34,6 +35,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         super().__init__()
         self.proxied_registry = registry
 
+    @inject_user_details_decorator
     def ApplyEntity(self, request: RegistryServer_pb2.ApplyEntityRequest, context):
         assert_permissions(
             resource=self.proxied_registry.apply_entity(
@@ -45,6 +47,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def GetEntity(self, request: RegistryServer_pb2.GetEntityRequest, context):
         return assert_permissions(
             self.proxied_registry.get_entity(
@@ -55,6 +58,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListEntities(self, request: RegistryServer_pb2.ListEntitiesRequest, context):
         return RegistryServer_pb2.ListEntitiesResponse(
             entities=[
@@ -73,6 +77,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteEntity(self, request: RegistryServer_pb2.DeleteEntityRequest, context):
         assert_permissions(
             resource=self.proxied_registry.get_entity(
@@ -86,6 +91,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def ApplyDataSource(
         self, request: RegistryServer_pb2.ApplyDataSourceRequest, context
     ):
@@ -99,6 +105,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def GetDataSource(self, request: RegistryServer_pb2.GetDataSourceRequest, context):
         return assert_permissions(
             resource=self.proxied_registry.get_data_source(
@@ -109,6 +116,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=AuthzedAction.READ,
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListDataSources(
         self, request: RegistryServer_pb2.ListDataSourcesRequest, context
     ):
@@ -129,6 +137,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteDataSource(
         self, request: RegistryServer_pb2.DeleteDataSourceRequest, context
     ):
@@ -145,6 +154,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def GetFeatureView(
         self, request: RegistryServer_pb2.GetFeatureViewRequest, context
     ):
@@ -157,6 +167,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ApplyFeatureView(
         self, request: RegistryServer_pb2.ApplyFeatureViewRequest, context
     ):
@@ -180,6 +191,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def ListFeatureViews(
         self, request: RegistryServer_pb2.ListFeatureViewsRequest, context
     ):
@@ -200,6 +212,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteFeatureView(
         self, request: RegistryServer_pb2.DeleteFeatureViewRequest, context
     ):
@@ -214,6 +227,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def GetStreamFeatureView(
         self, request: RegistryServer_pb2.GetStreamFeatureViewRequest, context
     ):
@@ -226,6 +240,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListStreamFeatureViews(
         self, request: RegistryServer_pb2.ListStreamFeatureViewsRequest, context
     ):
@@ -246,6 +261,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def GetOnDemandFeatureView(
         self, request: RegistryServer_pb2.GetOnDemandFeatureViewRequest, context
     ):
@@ -258,6 +274,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListOnDemandFeatureViews(
         self, request: RegistryServer_pb2.ListOnDemandFeatureViewsRequest, context
     ):
@@ -278,6 +295,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def ApplyFeatureService(
         self, request: RegistryServer_pb2.ApplyFeatureServiceRequest, context
     ):
@@ -292,6 +310,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
 
         return Empty()
 
+    @inject_user_details_decorator
     def GetFeatureService(
         self, request: RegistryServer_pb2.GetFeatureServiceRequest, context
     ):
@@ -304,6 +323,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListFeatureServices(
         self, request: RegistryServer_pb2.ListFeatureServicesRequest, context
     ):
@@ -324,6 +344,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteFeatureService(
         self, request: RegistryServer_pb2.DeleteFeatureServiceRequest, context
     ):
@@ -341,6 +362,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def ApplySavedDataset(
         self, request: RegistryServer_pb2.ApplySavedDatasetRequest, context
     ):
@@ -355,6 +377,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
 
         return Empty()
 
+    @inject_user_details_decorator
     def GetSavedDataset(
         self, request: RegistryServer_pb2.GetSavedDatasetRequest, context
     ):
@@ -367,6 +390,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListSavedDatasets(
         self, request: RegistryServer_pb2.ListSavedDatasetsRequest, context
     ):
@@ -387,6 +411,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteSavedDataset(
         self, request: RegistryServer_pb2.DeleteSavedDatasetRequest, context
     ):
@@ -402,6 +427,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def ApplyValidationReference(
         self, request: RegistryServer_pb2.ApplyValidationReferenceRequest, context
     ):
@@ -418,6 +444,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
 
         return Empty()
 
+    @inject_user_details_decorator
     def GetValidationReference(
         self, request: RegistryServer_pb2.GetValidationReferenceRequest, context
     ):
@@ -430,6 +457,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             actions=[AuthzedAction.READ],
         ).to_proto()
 
+    @inject_user_details_decorator
     def ListValidationReferences(
         self, request: RegistryServer_pb2.ListValidationReferencesRequest, context
     ):
@@ -450,6 +478,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeleteValidationReference(
         self, request: RegistryServer_pb2.DeleteValidationReferenceRequest, context
     ):
@@ -464,6 +493,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def ListProjectMetadata(
         self, request: RegistryServer_pb2.ListProjectMetadataRequest, context
     ):
@@ -476,6 +506,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def ApplyMaterialization(
         self, request: RegistryServer_pb2.ApplyMaterializationRequest, context
     ):
@@ -510,6 +541,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             project=request.project, allow_cache=request.allow_cache
         ).to_proto()
 
+    @inject_user_details_decorator
     def ApplyPermission(
         self, request: RegistryServer_pb2.ApplyPermissionRequest, context
     ):
@@ -523,6 +555,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
         )
         return Empty()
 
+    @inject_user_details_decorator
     def GetPermission(self, request: RegistryServer_pb2.GetPermissionRequest, context):
         permission = self.proxied_registry.get_permission(
             name=request.name, project=request.project, allow_cache=request.allow_cache
@@ -535,6 +568,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
 
         return permission
 
+    @inject_user_details_decorator
     def ListPermissions(
         self, request: RegistryServer_pb2.ListPermissionsRequest, context
     ):
@@ -553,6 +587,7 @@ class RegistryServer(RegistryServer_pb2_grpc.RegistryServerServicer):
             ]
         )
 
+    @inject_user_details_decorator
     def DeletePermission(
         self, request: RegistryServer_pb2.DeletePermissionRequest, context
     ):
