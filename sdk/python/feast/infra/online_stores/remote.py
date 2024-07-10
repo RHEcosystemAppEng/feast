@@ -21,7 +21,7 @@ from pydantic import StrictStr
 from feast import Entity, FeatureView, RepoConfig
 from feast.infra.online_stores.online_store import OnlineStore
 from feast.permissions.client.http_auth_requests_wrapper import (
-    HttpAuthRequestsSessionFactory,
+    get_http_auth_requests_session,
 )
 from feast.protos.feast.types.EntityKey_pb2 import EntityKey as EntityKeyProto
 from feast.protos.feast.types.Value_pb2 import Value as ValueProto
@@ -72,9 +72,9 @@ class RemoteOnlineStore(OnlineStore):
         req_body = self._construct_online_read_api_json_request(
             entity_keys, table, requested_features
         )
-        response = HttpAuthRequestsSessionFactory.get_auth_requests_session(
-            config.auth_config
-        ).post(f"{config.online_store.path}/get-online-features", data=req_body)
+        response = get_http_auth_requests_session(config.auth_config).post(
+            f"{config.online_store.path}/get-online-features", data=req_body
+        )
         if response.status_code == 200:
             logger.debug("Able to retrieve the online features from feature server.")
             response_json = json.loads(response.text)

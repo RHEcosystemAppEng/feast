@@ -10,7 +10,7 @@ class AuthConfig(FeastConfigBaseModel):
 class OidcAuthConfig(AuthConfig):
     auth_server_url: Optional[str] = None
     auth_discovery_url: str
-    client_id: Optional[str] = None
+    client_id: str
     client_secret: Optional[str] = None
     username: str
     password: str
@@ -21,5 +21,5 @@ class NoAuthConfig(AuthConfig):
     pass
 
 
-class K8AuthConfig(AuthConfig):
+class KubernetesAuthConfig(AuthConfig):
     pass

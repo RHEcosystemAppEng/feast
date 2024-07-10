@@ -1,7 +1,11 @@
+import logging
+
 import requests
 
 from feast.permissions.auth_model import OidcAuthConfig
 from feast.permissions.client.auth_client_manager import AuthenticationClientManager
+
+logger = logging.getLogger(__name__)
 
 
 class OidcAuthClientManager(AuthenticationClientManager):
@@ -28,14 +32,20 @@ class OidcAuthClientManager(AuthenticationClientManager):
 
         token_request_body = {
             "grant_type": "password",
-            "client_id": "admin-cli",
+            "client_id": self.auth_config.client_id,
             "username": self.auth_config.username,
             "password": self.auth_config.password,
         }
 
         token_response = requests.post(token_endpoint, data=token_request_body)
         if token_response.status_code == 200:
-            return token_response.json()["access_token"]
+            access_token = token_response.json()["access_token"]
+            if not access_token:
+                logger.debug(
+                    f"access_token is empty for the client_id=${self.auth_config.client_id}"
+                )
+                raise RuntimeError("access token is empty")
+            return access_token
         else:
             raise RuntimeError(
                 "Failed to obtain access token: {token_response.status_code} - {token_response.text}"
