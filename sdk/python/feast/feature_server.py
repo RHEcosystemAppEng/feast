@@ -24,7 +24,7 @@ from feast.permissions.server.utils import (
     ServerType,
     init_auth_manager,
     init_security_manager,
-    str_to_auth_type,
+    str_to_auth_manager_type,
 )
 
 
@@ -307,7 +307,7 @@ def start_server(
     keep_alive_timeout: int,
     registry_ttl_sec: int,
 ):
-    auth_type = str_to_auth_type(store.config.auth_config.type)
+    auth_type = str_to_auth_manager_type(store.config.auth_config.type)
     init_security_manager(auth_type=auth_type, fs=store)
     init_auth_manager(
         auth_type=auth_type,
