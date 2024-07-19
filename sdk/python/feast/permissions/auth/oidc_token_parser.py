@@ -68,12 +68,13 @@ class OidcTokenParser(TokenParser):
 
         try:
             signing_key = jwks_client.get_signing_key_from_jwt(access_token)
+            ## TODO: Do we need to inject these from config or fixed?
             data = jwt.decode(
                 access_token,
                 signing_key.key,
                 algorithms=["RS256"],
                 audience="account",
-                options={"verify_exp": True},
+                options={"verify_aud": False, "verify_signature": True, "verify_exp": True},
             )
 
             if "preferred_username" not in data:
@@ -99,4 +100,5 @@ class OidcTokenParser(TokenParser):
             logger.info(f"Extracted user {current_user} and roles {roles}")
             return User(username=current_user, roles=roles)
         except jwt.exceptions.InvalidTokenError:
+            logger.exception("Exception while parsing the token:")
             raise AuthenticationError("Invalid token.")
