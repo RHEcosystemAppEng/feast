@@ -4,6 +4,7 @@ from textwrap import dedent
 
 import pytest
 import yaml
+from testcontainers.keycloak import KeycloakContainer
 
 from feast import (
     Entity,
@@ -82,18 +83,22 @@ invalid_list_entities_perm = Permission(
         dedent("""
           auth:
             type: oidc
-            client_id: client_id
-            client_secret: client_secret
-            username: username
+            client_id: feast-integration-client
+            client_secret: feast-integration-client-secret
+            username: reader_writer
             password: password
-            realm: realm
-            auth_server_url: http://localhost:8080
-            auth_discovery_url: http://localhost:8080/realms/master/.well-known/openid-configuration
-        """),
+            realm: master
+            auth_server_url: KEYCLOAK_AUTH_SERVER_PLACEHOLDER
+            auth_discovery_url: KEYCLOAK_AUTH_SERVER_PLACEHOLDER/realms/master/.well-known/openid-configuration
+        """)
     ],
 )
 def auth_config(request):
-    return request.param
+    auth_config = request.param
+    if "oidc" in auth_config:
+        keycloak_host = request.getfixturevalue('start_keycloak_server')
+        auth_config = auth_config.replace("KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host)
+    return auth_config
 
 
 @pytest.fixture
@@ -107,6 +112,121 @@ def temp_dir():
 def feature_store(temp_dir, auth_config, applied_permissions):
     print(f"Creating store at {temp_dir}")
     return _default_store(str(temp_dir), auth_config, applied_permissions)
+
+@pytest.fixture(scope="module")
+def start_keycloak_server():
+    with KeycloakContainer("quay.io/keycloak/keycloak:24.0.1") as keycloak_container:
+        keycloak_admin = keycloak_container.get_client()
+
+        new_client_id = "feast-integration-client"
+        new_client_secret = "feast-integration-client-secret"
+        # Create a new client
+        client_representation = {
+            "clientId": new_client_id,
+            "secret": new_client_secret,
+            "enabled": True,
+            "directAccessGrantsEnabled": True,
+            "publicClient": False,
+            "redirectUris": ["*"],
+            "serviceAccountsEnabled": True,
+            "standardFlowEnabled": True,
+
+        }
+        keycloak_admin.create_client(client_representation)
+
+        # Get the client ID
+        client_id = keycloak_admin.get_client_id(new_client_id)
+
+        # Role representation
+        reader_role_rep = {
+            "name": "reader",
+            "description": "feast reader client role",
+            "composite": False,
+            "clientRole": True,
+            "containerId": client_id
+        }
+        keycloak_admin.create_client_role(client_id, reader_role_rep, True)
+        reader_role_id = keycloak_admin.get_client_role(client_id=client_id, role_name="reader")
+
+        # Role representation
+        writer_role_rep = {
+            "name": "writer",
+            "description": "feast writer client role",
+            "composite": False,
+            "clientRole": True,
+            "containerId": client_id
+        }
+        keycloak_admin.create_client_role(client_id, writer_role_rep, True)
+        writer_role_id = keycloak_admin.get_client_role(client_id=client_id, role_name="writer")
+
+        # Mapper representation
+        mapper_representation = {
+            "name": "client-roles-mapper",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-client-role-mapper",
+            "consentRequired": False,
+            "config": {
+                "multivalued": "true",
+                "userinfo.token.claim": "true",
+                "id.token.claim": "true",
+                "access.token.claim": "true",
+                "claim.name": "roles",
+                "jsonType.label": "String",
+                "client.id": client_id
+            }
+        }
+
+        # Add predefined client roles mapper to the client
+        keycloak_admin.add_mapper_to_client(client_id, mapper_representation)
+
+        reader_writer_user = {
+            "username": "reader_writer",
+            "enabled": True,
+            "firstName": "reader_writer fn",
+            "lastName": "reader_writer ln",
+            "email": "reader_writer@email.com",
+            "emailVerified": True,
+            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+        }
+        reader_writer_user_id = keycloak_admin.create_user(reader_writer_user)
+        keycloak_admin.assign_client_role(user_id=reader_writer_user_id, client_id=client_id,
+                                          roles=[reader_role_id, writer_role_id])
+
+        reader_user = {
+            "username": "reader",
+            "enabled": True,
+            "firstName": "reader fn",
+            "lastName": "reader ln",
+            "email": "reader@email.com",
+            "emailVerified": True,
+            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+        }
+        reader_user_id = keycloak_admin.create_user(reader_user)
+        keycloak_admin.assign_client_role(user_id=reader_user_id, client_id=client_id, roles=[reader_role_id])
+
+        writer_user = {
+            "username": "writer",
+            "enabled": True,
+            "firstName": "writer fn",
+            "lastName": "writer ln",
+            "email": "writer@email.com",
+            "emailVerified": True,
+            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+        }
+        writer_user_id = keycloak_admin.create_user(writer_user)
+        keycloak_admin.assign_client_role(user_id=writer_user_id, client_id=client_id, roles=[writer_role_id])
+
+        no_roles_user = {
+            "username": "no_roles_user",
+            "enabled": True,
+            "firstName": "no_roles_user fn",
+            "lastName": "no_roles_user ln",
+            "email": "no_roles_user@email.com",
+            "emailVerified": True,
+            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+        }
+        keycloak_admin.create_user(no_roles_user)
+        yield keycloak_container.get_url()
 
 
 @pytest.fixture
