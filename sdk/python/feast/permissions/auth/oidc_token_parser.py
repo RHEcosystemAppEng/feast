@@ -74,7 +74,11 @@ class OidcTokenParser(TokenParser):
                 signing_key.key,
                 algorithms=["RS256"],
                 audience="account",
-                options={"verify_aud": False, "verify_signature": True, "verify_exp": True},
+                options={
+                    "verify_aud": False,
+                    "verify_signature": True,
+                    "verify_exp": True,
+                },
             )
 
             if "preferred_username" not in data:

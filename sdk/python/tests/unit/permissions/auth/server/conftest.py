@@ -33,14 +33,16 @@ from tests.utils.http_server import free_port  # noqa: E402
             realm: master
             auth_server_url: KEYCLOAK_AUTH_SERVER_PLACEHOLDER
             auth_discovery_url: KEYCLOAK_AUTH_SERVER_PLACEHOLDER/realms/master/.well-known/openid-configuration
-        """)
+        """),
     ],
 )
 def auth_config(request):
     auth_config = request.param
     if "oidc" in auth_config:
-        keycloak_host = request.getfixturevalue('start_keycloak_server')
-        auth_config = auth_config.replace("KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host)
+        keycloak_host = request.getfixturevalue("start_keycloak_server")
+        auth_config = auth_config.replace(
+            "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
+        )
     return auth_config
 
 
@@ -55,6 +57,7 @@ def temp_dir():
 def feature_store(temp_dir, auth_config):
     print(f"Creating store at {temp_dir}")
     return _default_store(str(temp_dir), auth_config)
+
 
 @pytest.fixture(scope="module")
 def start_keycloak_server():
@@ -73,7 +76,6 @@ def start_keycloak_server():
             "redirectUris": ["*"],
             "serviceAccountsEnabled": True,
             "standardFlowEnabled": True,
-
         }
         keycloak_admin.create_client(client_representation)
 
@@ -86,10 +88,12 @@ def start_keycloak_server():
             "description": "feast reader client role",
             "composite": False,
             "clientRole": True,
-            "containerId": client_id
+            "containerId": client_id,
         }
         keycloak_admin.create_client_role(client_id, reader_role_rep, True)
-        reader_role_id = keycloak_admin.get_client_role(client_id=client_id, role_name="reader")
+        reader_role_id = keycloak_admin.get_client_role(
+            client_id=client_id, role_name="reader"
+        )
 
         # Role representation
         writer_role_rep = {
@@ -97,10 +101,12 @@ def start_keycloak_server():
             "description": "feast writer client role",
             "composite": False,
             "clientRole": True,
-            "containerId": client_id
+            "containerId": client_id,
         }
         keycloak_admin.create_client_role(client_id, writer_role_rep, True)
-        writer_role_id = keycloak_admin.get_client_role(client_id=client_id, role_name="writer")
+        writer_role_id = keycloak_admin.get_client_role(
+            client_id=client_id, role_name="writer"
+        )
 
         # Mapper representation
         mapper_representation = {
@@ -115,8 +121,8 @@ def start_keycloak_server():
                 "access.token.claim": "true",
                 "claim.name": "roles",
                 "jsonType.label": "String",
-                "client.id": client_id
-            }
+                "client.id": client_id,
+            },
         }
 
         # Add predefined client roles mapper to the client
@@ -129,11 +135,16 @@ def start_keycloak_server():
             "lastName": "reader_writer ln",
             "email": "reader_writer@email.com",
             "emailVerified": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
         }
         reader_writer_user_id = keycloak_admin.create_user(reader_writer_user)
-        keycloak_admin.assign_client_role(user_id=reader_writer_user_id, client_id=client_id,
-                                          roles=[reader_role_id, writer_role_id])
+        keycloak_admin.assign_client_role(
+            user_id=reader_writer_user_id,
+            client_id=client_id,
+            roles=[reader_role_id, writer_role_id],
+        )
 
         reader_user = {
             "username": "reader",
@@ -142,10 +153,14 @@ def start_keycloak_server():
             "lastName": "reader ln",
             "email": "reader@email.com",
             "emailVerified": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
         }
         reader_user_id = keycloak_admin.create_user(reader_user)
-        keycloak_admin.assign_client_role(user_id=reader_user_id, client_id=client_id, roles=[reader_role_id])
+        keycloak_admin.assign_client_role(
+            user_id=reader_user_id, client_id=client_id, roles=[reader_role_id]
+        )
 
         writer_user = {
             "username": "writer",
@@ -154,10 +169,14 @@ def start_keycloak_server():
             "lastName": "writer ln",
             "email": "writer@email.com",
             "emailVerified": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
         }
         writer_user_id = keycloak_admin.create_user(writer_user)
-        keycloak_admin.assign_client_role(user_id=writer_user_id, client_id=client_id, roles=[writer_role_id])
+        keycloak_admin.assign_client_role(
+            user_id=writer_user_id, client_id=client_id, roles=[writer_role_id]
+        )
 
         no_roles_user = {
             "username": "no_roles_user",
@@ -166,7 +185,9 @@ def start_keycloak_server():
             "lastName": "no_roles_user ln",
             "email": "no_roles_user@email.com",
             "emailVerified": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}]
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
         }
         keycloak_admin.create_user(no_roles_user)
         yield keycloak_container.get_url()
