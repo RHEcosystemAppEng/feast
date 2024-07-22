@@ -22,10 +22,8 @@ import sys
 from pathlib import Path
 
 from setuptools import find_packages, setup, Command
-from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.build_py import build_py
 from setuptools.command.develop import develop
-from setuptools.command.install import install
 
 NAME = "feast"
 DESCRIPTION = "Python SDK for Feast"
@@ -178,6 +176,7 @@ CI_REQUIRED = (
         "pytest-env",
         "Sphinx>4.0.0,<7",
         "testcontainers==4.4.0",
+        "python-keycloak==4.2.2",
         "firebase-admin>=5.2.0,<6",
         "pre-commit<3.3.2",
         "assertpy==1.1",
