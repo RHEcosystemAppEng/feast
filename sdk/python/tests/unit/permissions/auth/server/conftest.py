@@ -94,13 +94,7 @@ invalid_list_entities_perm = Permission(
     ],
 )
 def auth_config(request):
-    auth_config = request.param
-    if "oidc" in auth_config:
-        keycloak_host = request.getfixturevalue("start_keycloak_server")
-        auth_config = auth_config.replace(
-            "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
-        )
-    return auth_config
+    return request.param
 
 
 @pytest.fixture
