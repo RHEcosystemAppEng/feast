@@ -23,6 +23,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Setting up the docker to the path variable.
+        id: setting up the docker path on mac
+          run: |
+            echo "/Applications/Docker.app/Contents/Resources/bin/" >> $GITHUB_PATH
+        if: runner.os == 'macOS'
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
