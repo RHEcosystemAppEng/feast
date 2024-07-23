@@ -1,7 +1,6 @@
 import logging
 import os
 import platform
-import sys
 import tempfile
 from textwrap import dedent
 
