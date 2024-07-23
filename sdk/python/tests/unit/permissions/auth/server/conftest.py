@@ -1,4 +1,6 @@
 import os
+import platform
+import sys
 import tempfile
 from textwrap import dedent
 
@@ -7,6 +9,7 @@ import yaml
 from testcontainers.keycloak import KeycloakContainer
 
 from feast import FeatureStore
+from tests.unit.permissions.auth.server import mock_utils
 from tests.unit.permissions.auth.server.mock_utils import PROJECT_NAME
 from tests.utils.cli_repo_creator import CliRunner
 from tests.utils.http_server import free_port  # noqa: E402
@@ -37,7 +40,26 @@ from tests.utils.http_server import free_port  # noqa: E402
     ],
 )
 def auth_config(request):
-    return request.param
+    auth_config = request.param
+    if "oidc" in auth_config:
+        from _pytest.monkeypatch import MonkeyPatch
+        monkeypatch = MonkeyPatch()
+        request.addfinalizer(monkeypatch.undo)
+
+        if sys.version_info[0:2] != (3, 10) or platform.system() != "Darwin":
+            auth_config_yaml = yaml.safe_load(auth_config)
+            mock_utils._mock_oidc(
+                request=request,
+                monkeypatch=monkeypatch,
+                client_id=auth_config_yaml["auth"]["client_id"],
+            )
+        else:
+            # Dynamically spin up keycloak server.
+            keycloak_host = request.getfixturevalue("start_keycloak_server")
+            auth_config = auth_config.replace(
+                "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
+            )
+    return auth_config
 
 
 @pytest.fixture

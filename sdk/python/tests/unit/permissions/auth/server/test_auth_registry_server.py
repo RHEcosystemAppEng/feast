@@ -24,20 +24,7 @@ def start_registry_server(
 ):
     if "kubernetes" in auth_config:
         mock_utils._mock_kubernetes(request=request, monkeypatch=monkeypatch)
-    elif "oidc" in auth_config:
-        if platform.system() == "Darwin":
-            auth_config_yaml = yaml.safe_load(auth_config)
-            mock_utils._mock_oidc(
-                request=request,
-                monkeypatch=monkeypatch,
-                client_id=auth_config_yaml["auth"]["client_id"],
-            )
-        else:
-            # Dynamically spin up keycloak server.
-            keycloak_host = request.getfixturevalue("start_keycloak_server")
-            auth_config = auth_config.replace(
-                "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
-            )
+
 
     assertpy.assert_that(server_port).is_not_equal_to(0)
 
