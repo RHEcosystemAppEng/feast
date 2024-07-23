@@ -1,3 +1,4 @@
+import logging
 import os
 import platform
 import sys
@@ -13,6 +14,8 @@ from tests.unit.permissions.auth.server import mock_utils
 from tests.unit.permissions.auth.server.mock_utils import PROJECT_NAME
 from tests.utils.cli_repo_creator import CliRunner
 from tests.utils.http_server import free_port  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(
@@ -47,7 +50,10 @@ def auth_config(request):
         monkeypatch = MonkeyPatch()
         request.addfinalizer(monkeypatch.undo)
 
-        if sys.version_info[0:2] != (3, 10) or platform.system() != "Darwin":
+        if sys.version_info[0:2] == (3, 10) and platform.system() == "Darwin":
+            logger.info(
+                f"mocking the oidc server code on the platform {sys.version_info[0:2]} and {platform.system()} "
+            )
             auth_config_yaml = yaml.safe_load(auth_config)
             mock_utils._mock_oidc(
                 request=request,
@@ -55,7 +61,9 @@ def auth_config(request):
                 client_id=auth_config_yaml["auth"]["client_id"],
             )
         else:
-            # Dynamically spin up keycloak server.
+            logger.info(
+                f"Spinning up the oidc server code on the platform {sys.version_info[0:2]} and {platform.system()} "
+            )
             keycloak_host = request.getfixturevalue("start_keycloak_server")
             auth_config = auth_config.replace(
                 "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
