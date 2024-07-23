@@ -1,9 +1,5 @@
-import sys
-import platform
-
 import assertpy
 import pytest
-import yaml
 
 from feast import FeatureStore
 from feast.infra.registry.remote import RemoteRegistryConfig
@@ -24,7 +20,6 @@ def start_registry_server(
 ):
     if "kubernetes" in auth_config:
         mock_utils._mock_kubernetes(request=request, monkeypatch=monkeypatch)
-
 
     assertpy.assert_that(server_port).is_not_equal_to(0)
 

@@ -43,6 +43,7 @@ def auth_config(request):
     auth_config = request.param
     if "oidc" in auth_config:
         from _pytest.monkeypatch import MonkeyPatch
+
         monkeypatch = MonkeyPatch()
         request.addfinalizer(monkeypatch.undo)
 
