@@ -50,10 +50,7 @@ def auth_config(request):
         monkeypatch = MonkeyPatch()
         request.addfinalizer(monkeypatch.undo)
 
-        if sys.version_info[0:2] == (3, 10) and platform.system() == "Darwin":
-            logger.error(
-                f"mocking the oidc server code on the platform {sys.version_info[0:2]} and {platform.system()} "
-            )
+        if platform.system() == "Darwin":
             auth_config_yaml = yaml.safe_load(auth_config)
             mock_utils._mock_oidc(
                 request=request,
@@ -61,14 +58,10 @@ def auth_config(request):
                 client_id=auth_config_yaml["auth"]["client_id"],
             )
         else:
-            logger.error(
-                f"Spinning up the oidc server code on the platform {sys.version_info[0:2]} and {platform.system()} "
-            )
             keycloak_host = request.getfixturevalue("start_keycloak_server")
             auth_config = auth_config.replace(
                 "KEYCLOAK_AUTH_SERVER_PLACEHOLDER", keycloak_host
             )
-            logger.error(f"auth config is updated with the actual keycloak server- {auth_config}")
     return auth_config
 
 
