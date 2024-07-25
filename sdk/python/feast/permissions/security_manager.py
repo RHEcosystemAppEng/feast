@@ -87,7 +87,6 @@ class SecurityManager:
 def assert_permissions(
     resource: FeastObject,
     actions: Union[AuthzedAction, List[AuthzedAction]],
-    filter_only: bool = False,
 ) -> FeastObject:
     """
     A utility function to invoke the `assert_permissions` method on the global security manager.
@@ -101,7 +100,7 @@ def assert_permissions(
         FeastObject: The original `resource`, if permitted.
 
     Raises:
-        PermissionError: If the current user is not authorized to eecute the requested actions on the given resources (and `filter_only` is `False`).
+        PermissionError: If the current user is not authorized to execute the requested actions on the given resources.
     """
     sm = get_security_manager()
     if sm is None:
