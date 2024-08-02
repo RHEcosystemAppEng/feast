@@ -16,11 +16,6 @@ from testcontainers.core.generic import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.keycloak import KeycloakContainer
 from testcontainers.minio import MinioContainer
-from tests.integration.feature_repos.universal.data_source_creator import \
-    DataSourceCreator
-from tests.utils.auth_permissions_util import (include_auth_config,
-                                               setup_permissions_on_keycloak)
-from tests.utils.http_server import check_port_open, free_port  # noqa: E402
 
 from feast import FileSource, RepoConfig
 from feast.data_format import DeltaFormat, ParquetFormat
@@ -28,11 +23,21 @@ from feast.data_source import DataSource
 from feast.feature_logging import LoggingDestination
 from feast.infra.offline_stores.dask import DaskOfflineStoreConfig
 from feast.infra.offline_stores.duckdb import DuckDBOfflineStoreConfig
-from feast.infra.offline_stores.file_source import (FileLoggingDestination,
-                                                    SavedDatasetFileStorage)
+from feast.infra.offline_stores.file_source import (
+    FileLoggingDestination,
+    SavedDatasetFileStorage,
+)
 from feast.infra.offline_stores.remote import RemoteOfflineStoreConfig
 from feast.repo_config import FeastConfigBaseModel, RegistryConfig
 from feast.wait import wait_retry_backoff  # noqa: E402
+from tests.integration.feature_repos.universal.data_source_creator import (
+    DataSourceCreator,
+)
+from tests.utils.auth_permissions_util import (
+    include_auth_config,
+    setup_permissions_on_keycloak,
+)
+from tests.utils.http_server import check_port_open, free_port  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +54,12 @@ class FileDataSourceCreator(DataSourceCreator):
         self.keep = []
 
     def create_data_source(
-            self,
-            df: pd.DataFrame,
-            destination_name: str,
-            created_timestamp_column="created_ts",
-            field_mapping: Optional[Dict[str, str]] = None,
-            timestamp_field: Optional[str] = "ts",
+        self,
+        df: pd.DataFrame,
+        destination_name: str,
+        created_timestamp_column="created_ts",
+        field_mapping: Optional[Dict[str, str]] = None,
+        timestamp_field: Optional[str] = "ts",
     ) -> DataSource:
         destination_name = self.get_prefixed_table_name(destination_name)
 
@@ -103,12 +108,12 @@ class FileDataSourceCreator(DataSourceCreator):
 
 class DeltaFileSourceCreator(FileDataSourceCreator):
     def create_data_source(
-            self,
-            df: pd.DataFrame,
-            destination_name: str,
-            created_timestamp_column="created_ts",
-            field_mapping: Optional[Dict[str, str]] = None,
-            timestamp_field: Optional[str] = "ts",
+        self,
+        df: pd.DataFrame,
+        destination_name: str,
+        created_timestamp_column="created_ts",
+        field_mapping: Optional[Dict[str, str]] = None,
+        timestamp_field: Optional[str] = "ts",
     ) -> DataSource:
         from deltalake.writer import write_deltalake
 
@@ -166,12 +171,12 @@ class DeltaS3FileSourceCreator(FileDataSourceCreator):
         }
 
     def create_data_source(
-            self,
-            df: pd.DataFrame,
-            destination_name: str,
-            created_timestamp_column="created_ts",
-            field_mapping: Optional[Dict[str, str]] = None,
-            timestamp_field: Optional[str] = "ts",
+        self,
+        df: pd.DataFrame,
+        destination_name: str,
+        created_timestamp_column="created_ts",
+        field_mapping: Optional[Dict[str, str]] = None,
+        timestamp_field: Optional[str] = "ts",
     ) -> DataSource:
         from deltalake.writer import write_deltalake
 
@@ -215,12 +220,12 @@ class DeltaS3FileSourceCreator(FileDataSourceCreator):
 
 class FileParquetDatasetSourceCreator(FileDataSourceCreator):
     def create_data_source(
-            self,
-            df: pd.DataFrame,
-            destination_name: str,
-            created_timestamp_column="created_ts",
-            field_mapping: Optional[Dict[str, str]] = None,
-            timestamp_field: Optional[str] = "ts",
+        self,
+        df: pd.DataFrame,
+        destination_name: str,
+        created_timestamp_column="created_ts",
+        field_mapping: Optional[Dict[str, str]] = None,
+        timestamp_field: Optional[str] = "ts",
     ) -> DataSource:
         destination_name = self.get_prefixed_table_name(destination_name)
 
@@ -288,12 +293,12 @@ class S3FileDataSourceCreator(DataSourceCreator):
         )
 
     def create_data_source(
-            self,
-            df: pd.DataFrame,
-            destination_name: str,
-            created_timestamp_column="created_ts",
-            field_mapping: Optional[Dict[str, str]] = None,
-            timestamp_field: Optional[str] = "ts",
+        self,
+        df: pd.DataFrame,
+        destination_name: str,
+        created_timestamp_column="created_ts",
+        field_mapping: Optional[Dict[str, str]] = None,
+        timestamp_field: Optional[str] = "ts",
     ) -> DataSource:
         filename = f"{destination_name}.parquet"
         port = self.minio.get_exposed_port("9000")
@@ -502,7 +507,7 @@ auth:
             type="remote", host="0.0.0.0", port=self.server_port
         )
         return self.remote_offline_store_config
-    
+
     def get_keycloak_url(self):
         return self.keycloak_container.get_url()
 
