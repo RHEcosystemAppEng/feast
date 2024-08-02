@@ -13,7 +13,7 @@ from feast import (
 )
 from feast.feast_object import FeastObject
 from feast.permissions.action import ALL_ACTIONS
-from feast.permissions.decision import DecisionEvaluator
+from feast.permissions.decision import DecisionEvaluator, DecisionStrategy
 from feast.permissions.permission import Permission
 from feast.permissions.policy import Policy, RoleBasedPolicy
 from feast.permissions.user import User
@@ -271,7 +271,10 @@ def handler_list_all_permissions_roles(permissions: list[Permission], table: lis
 
 
 def handler_list_all_permissions_roles_verbose(
-    objects: list[FeastObject], permissions: list[Permission], table: list[Any]
+    store: FeatureStore,
+    objects: list[FeastObject],
+    permissions: list[Permission],
+    table: list[Any],
 ):
     all_roles = fetch_all_permission_roles(permissions)
 
@@ -288,7 +291,7 @@ def handler_list_all_permissions_roles_verbose(
 
                 if matching_permissions:
                     evaluator = DecisionEvaluator(
-                        Permission.get_global_decision_strategy(),
+                        get_global_decision_strategy(store),
                         len(matching_permissions),
                     )
                     for p in matching_permissions:
@@ -316,3 +319,7 @@ def handler_list_all_permissions_roles_verbose(
                     [a.value.upper() for a in permitted_actions],
                 ]
             )
+
+
+def get_global_decision_strategy(store: FeatureStore) -> DecisionStrategy:
+    return store.get_decision_strategy(store.project)
