@@ -19,7 +19,7 @@ class FlightBearerTokenInterceptor(fl.ClientMiddleware):
     def sending_headers(self):
         auth_client_manager = get_auth_client_manager(self.auth_config)
         access_token = auth_client_manager.get_token()
-        return {"authorization": f"Bearer {access_token}"}
+        return {b"authorization": b"Bearer " + access_token.encode("utf-8")}
 
 
 class FlightAuthInterceptorFactory(fl.ClientMiddlewareFactory):
