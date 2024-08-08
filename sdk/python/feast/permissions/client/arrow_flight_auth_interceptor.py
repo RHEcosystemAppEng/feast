@@ -2,7 +2,7 @@ import pyarrow.flight as fl
 
 from feast.permissions.auth.auth_type import AuthType
 from feast.permissions.auth_model import AuthConfig
-from feast.permissions.client.auth_client_manager import get_auth_client_manager
+from feast.permissions.client.auth_client_manager_factory import get_auth_token
 
 
 class FlightBearerTokenInterceptor(fl.ClientMiddleware):
@@ -17,8 +17,7 @@ class FlightBearerTokenInterceptor(fl.ClientMiddleware):
         pass
 
     def sending_headers(self):
-        auth_client_manager = get_auth_client_manager(self.auth_config)
-        access_token = auth_client_manager.get_token()
+        access_token = get_auth_token(self.auth_config)
         return {b"authorization": b"Bearer " + access_token.encode("utf-8")}
 
 
@@ -31,7 +30,7 @@ class FlightAuthInterceptorFactory(fl.ClientMiddlewareFactory):
         return FlightBearerTokenInterceptor(self.auth_config)
 
 
-def build_arrow_flight_client(host: str, port: int, auth_config: AuthConfig):
+def build_arrow_flight_client(host: str, port, auth_config: AuthConfig):
     if auth_config.type != AuthType.NONE.value:
         middleware_factory = FlightAuthInterceptorFactory(auth_config)
         return fl.FlightClient(f"grpc://{host}:{port}", middleware=[middleware_factory])

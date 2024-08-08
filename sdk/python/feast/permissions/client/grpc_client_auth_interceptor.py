@@ -3,7 +3,7 @@ import logging
 import grpc
 
 from feast.permissions.auth_model import AuthConfig
-from feast.permissions.client.auth_client_manager import get_auth_client_manager
+from feast.permissions.client.auth_client_manager_factory import get_auth_token
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,7 @@ class GrpcClientAuthHeaderInterceptor(
             f"token. "
         )
         metadata = client_call_details.metadata or []
-        auth_client_manager = get_auth_client_manager(self._auth_type)
-        access_token = auth_client_manager.get_token()
+        access_token = get_auth_token(self._auth_type)
         metadata.append((b"authorization", b"Bearer " + access_token.encode("utf-8")))
         client_call_details = client_call_details._replace(metadata=metadata)
         return client_call_details
