@@ -51,7 +51,7 @@ class RemoteRegistry(BaseRegistry):
     ):
         self.auth_config = auth_config
         channel = grpc.insecure_channel(registry_config.path)
-        if self.auth_config.type is not AuthType.NONE.value:
+        if self.auth_config.type != AuthType.NONE.value:
             auth_header_interceptor = GrpcClientAuthHeaderInterceptor(auth_config)
             channel = grpc.intercept_channel(channel, auth_header_interceptor)
         self.stub = RegistryServer_pb2_grpc.RegistryServerStub(channel)
