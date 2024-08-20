@@ -1,3 +1,7 @@
+from typing import Any
+
+import jwt
+
 from feast.permissions.auth.auth_type import AuthType
 from feast.permissions.auth_model import (
     AuthConfig,
@@ -28,3 +32,19 @@ def get_auth_client_manager(auth_config: AuthConfig) -> AuthenticationClientMana
 
 def get_auth_token(auth_config: AuthConfig) -> str:
     return get_auth_client_manager(auth_config).get_token()
+
+
+def create_skip_auth_token(
+    auth_config: AuthConfig, intra_communication_base64: str
+) -> str:
+    payload: dict[str, Any] = {}
+    if auth_config.type == AuthType.OIDC.value:
+        payload = {
+            "preferred_username": f"{intra_communication_base64}",  # Subject claim
+        }
+    elif auth_config.type == AuthType.KUBERNETES.value:
+        payload = {
+            "sub": f":::{intra_communication_base64}",  # Subject claim
+        }
+
+    return jwt.encode(payload, "")

@@ -1,9 +1,13 @@
 import logging
+import os
 
 import grpc
 
 from feast.permissions.auth_model import AuthConfig
-from feast.permissions.client.auth_client_manager_factory import get_auth_token
+from feast.permissions.client.auth_client_manager_factory import (
+    create_skip_auth_token,
+    get_auth_token,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,14 @@ class GrpcClientAuthHeaderInterceptor(
             "Intercepted the grpc api method call to inject Authorization header "
         )
         metadata = client_call_details.metadata or []
-        access_token = get_auth_token(self._auth_type)
+
+        intra_communication_base64 = os.getenv("INTRA_COMMUNICATION_BASE64")
+        if intra_communication_base64:
+            access_token = create_skip_auth_token(
+                self._auth_type, intra_communication_base64
+            )
+        else:
+            access_token = get_auth_token(self._auth_type)
         metadata.append((b"authorization", b"Bearer " + access_token.encode("utf-8")))
         client_call_details = client_call_details._replace(metadata=metadata)
         return client_call_details

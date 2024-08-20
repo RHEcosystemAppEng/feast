@@ -6,21 +6,71 @@ from feast.permissions.security_manager import assert_permissions, permitted_res
 
 
 @pytest.mark.parametrize(
-    "username, requested_actions, allowed, allowed_single, raise_error_in_assert, raise_error_in_permit",
+    "username, requested_actions, allowed, allowed_single, raise_error_in_assert, raise_error_in_permit, intra_communication_flag",
     [
-        (None, [], False, [False, False], [True, True], False),
-        ("r", [AuthzedAction.DESCRIBE], True, [True, True], [False, False], False),
-        ("r", [AuthzedAction.UPDATE], False, [False, False], [True, True], False),
-        ("w", [AuthzedAction.DESCRIBE], False, [False, False], [True, True], False),
-        ("w", [AuthzedAction.UPDATE], False, [True, True], [False, False], False),
-        ("rw", [AuthzedAction.DESCRIBE], False, [True, True], [False, False], False),
-        ("rw", [AuthzedAction.UPDATE], False, [True, True], [False, False], False),
+        (None, [], False, [False, False], [True, True], False, False),
+        (None, [], False, [False, False], [True, True], False, True),
+        ("r", [AuthzedAction.DESCRIBE], True, [True, True], [False, False], False, False),
+        ("r", [AuthzedAction.DESCRIBE], True, [True, True], [False, False], False, True),
+        ("test1234", [], True, [True, True], [False, False], False, True),
+        (
+            "r",
+            [AuthzedAction.UPDATE],
+            False,
+            [False, False],
+            [True, True],
+            False,
+            False,
+        ),
+        ("r", [AuthzedAction.UPDATE], False, [False, False], [True, True], False, True),
+        ("w", [AuthzedAction.DESCRIBE], False, [False, False], [True, True], False, False),
+        ("w", [AuthzedAction.DESCRIBE], False, [False, False], [True, True], False, True),
+        (
+            "w",
+            [AuthzedAction.UPDATE],
+            False,
+            [True, True],
+            [False, False],
+            False,
+            False,
+        ),
+        ("w", [AuthzedAction.UPDATE], False, [True, True], [False, False], False, True),
+        ("rw", [AuthzedAction.DESCRIBE], False, [True, True], [False, False], False, False),
+        ("rw", [AuthzedAction.DESCRIBE], False, [True, True], [False, False], False, True),
+        (
+            "rw",
+            [AuthzedAction.UPDATE],
+            False,
+            [True, True],
+            [False, False],
+            False,
+            False,
+        ),
+        (
+            "rw",
+            [AuthzedAction.UPDATE],
+            False,
+            [True, True],
+            [False, False],
+            False,
+            True,
+        ),
         (
             "rw",
             [AuthzedAction.DESCRIBE, AuthzedAction.UPDATE],
             False,
             [False, False],
             [True, True],
+            True,
+            False,
+        ),
+        (
+            "rw",
+            [AuthzedAction.DESCRIBE, AuthzedAction.UPDATE],
+            False,
+            [False, False],
+            [True, True],
+            True,
             True,
         ),
         (
@@ -30,6 +80,16 @@ from feast.permissions.security_manager import assert_permissions, permitted_res
             [False, True],
             [True, False],
             True,
+            False,
+        ),
+        (
+            "admin",
+            [AuthzedAction.DESCRIBE, AuthzedAction.UPDATE],
+            False,
+            [False, True],
+            [True, False],
+            True,
+            True,
         ),
         (
             "admin",
@@ -37,6 +97,16 @@ from feast.permissions.security_manager import assert_permissions, permitted_res
             False,
             [False, False],
             [True, True],
+            True,
+            False,
+        ),
+        (
+            "admin",
+            QUERY + [AuthzedAction.UPDATE],
+            False,
+            [False, False],
+            [True, True],
+            True,
             True,
         ),
     ],
@@ -51,7 +121,14 @@ def test_access_SecuredFeatureView(
     allowed_single,
     raise_error_in_assert,
     raise_error_in_permit,
+    intra_communication_flag,
+    monkeypatch,
 ):
+    if intra_communication_flag:
+        monkeypatch.setenv("INTRA_COMMUNICATION_BASE64", "test1234")
+    else:
+        monkeypatch.delenv("INTRA_COMMUNICATION_BASE64", False)
+
     sm = security_manager
     resources = feature_views
 

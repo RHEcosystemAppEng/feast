@@ -1,8 +1,13 @@
+import os
+
 import pyarrow.flight as fl
 
 from feast.permissions.auth.auth_type import AuthType
 from feast.permissions.auth_model import AuthConfig
-from feast.permissions.client.auth_client_manager_factory import get_auth_token
+from feast.permissions.client.auth_client_manager_factory import (
+    create_skip_auth_token,
+    get_auth_token,
+)
 
 
 class FlightBearerTokenInterceptor(fl.ClientMiddleware):
@@ -17,7 +22,13 @@ class FlightBearerTokenInterceptor(fl.ClientMiddleware):
         pass
 
     def sending_headers(self):
-        access_token = get_auth_token(self.auth_config)
+        intra_communication_base64 = os.getenv("INTRA_COMMUNICATION_BASE64")
+        if intra_communication_base64:
+            access_token = create_skip_auth_token(
+                self.auth_config, intra_communication_base64
+            )
+        else:
+            access_token = get_auth_token(self.auth_config)
         return {b"authorization": b"Bearer " + access_token.encode("utf-8")}
 
 
